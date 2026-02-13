@@ -1,5 +1,0 @@
-# URLs for KBSkills ingestion
-# (These are well-known public pages that should be accessible)
-https://ai4sci-project.org/
-https://www.whitehouse.gov/presidential-actions/2025/11/launching-the-genesis-mission/
-https://www.youtube.com/watch?v=6aXpIloAg2I
