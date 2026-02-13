@@ -1,0 +1,50 @@
+metadata:
+  name: "first_principles"
+  display_name: "第一性原理思考"
+  version: "1.0"
+  description: "从最基本的事实和假设出发，层层推导得出结论"
+  trigger:
+    domains: ["技术架构", "问题分析", "创新", "底层原理"]
+    keywords: ["为什么", "本质", "根本原因", "原理", "底层逻辑"]
+    intent_patterns: ["分析.*原因", "理解.*本质", "设计.*方案"]
+    threshold: 0.35
+
+thinking_framework:
+  description: |
+    使用第一性原理进行分析：
+    1. 识别当前问题的基本假设和已知事实
+    2. 质疑每一个假设 — 它是否真的成立？
+    3. 从已验证的基本事实出发，重新推导
+    4. 构建不依赖类比和惯例的独立结论
+
+  steps:
+    - name: "假设拆解"
+      prompt: |
+        针对 topic "{topic}"，列出所有隐含的假设和前提条件。
+        对每个假设评估其可靠性（高/中/低）。
+    - name: "基本事实提取"
+      prompt: |
+        从知识库检索结果中，提取不可再分解的基本事实。
+        区分"事实"与"观点/推断"。
+    - name: "逻辑重构"
+      prompt: |
+        仅基于已验证的基本事实，重新构建对 topic 的理解。
+        标注推理链中每一步的依据。
+
+tools:
+  - name: "assumption_matrix"
+    description: "假设矩阵 — 系统化记录和评估假设"
+    output_format: |
+      | 假设 | 来源 | 可靠性 | 验证方式 |
+      |------|------|--------|----------|
+  - name: "logic_tree"
+    description: "逻辑树 — 从根因到结论的推导可视化"
+    output_format: "层级缩进的推理链"
+
+output_requirements:
+  sections:
+    - "基本假设与前提"
+    - "核心事实（来自知识库）"
+    - "推理过程"
+    - "结论与洞察"
+  style: "每个结论必须标注推理依据和知识库来源"

@@ -1,0 +1,55 @@
+metadata:
+  name: "swot_analysis"
+  display_name: "SWOT 分析"
+  version: "1.0"
+  description: "从优势、劣势、机会、威胁四个维度进行系统分析"
+  trigger:
+    domains: ["商业分析", "竞争分析", "战略规划", "项目评估"]
+    keywords: ["优势", "劣势", "机会", "威胁", "竞争", "对比", "评估"]
+    intent_patterns: ["评估.*方案", "分析.*竞争", "比较.*优劣"]
+    threshold: 0.35
+
+thinking_framework:
+  description: |
+    使用 SWOT 框架进行全面分析：
+    - Strengths (优势): 内部积极因素
+    - Weaknesses (劣势): 内部消极因素
+    - Opportunities (机会): 外部积极因素
+    - Threats (威胁): 外部消极因素
+    综合四个维度形成战略建议。
+
+  steps:
+    - name: "优势识别"
+      prompt: |
+        针对 "{topic}"，从知识库中提取相关的优势和积极因素。
+        聚焦内部能力、资源、技术领先等方面。
+    - name: "劣势分析"
+      prompt: |
+        针对 "{topic}"，识别存在的不足、限制和短板。
+        关注内部缺陷、资源不足、技术瓶颈等。
+    - name: "机会发现"
+      prompt: |
+        针对 "{topic}"，发现外部环境中的机遇和有利趋势。
+        包括市场机会、技术趋势、政策支持等。
+    - name: "威胁评估"
+      prompt: |
+        针对 "{topic}"，评估外部环境中的风险和威胁因素。
+        包括竞争压力、技术颠覆、政策变化等。
+
+tools:
+  - name: "swot_matrix"
+    description: "SWOT 矩阵 — 四象限分析表"
+    output_format: |
+      |  | 积极因素 | 消极因素 |
+      |------|------|------|
+      | 内部 | 优势(S) | 劣势(W) |
+      | 外部 | 机会(O) | 威胁(T) |
+
+output_requirements:
+  sections:
+    - "Strengths (优势)"
+    - "Weaknesses (劣势)"
+    - "Opportunities (机会)"
+    - "Threats (威胁)"
+    - "综合战略建议"
+  style: "每个维度列出 3-5 个要点，附带知识库来源证据"

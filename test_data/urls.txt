@@ -1,0 +1,4 @@
+# Test URLs for KBSkills ingestion
+# (These are well-known public pages that should be accessible)
+https://en.wikipedia.org/wiki/Artificial_intelligence_in_education
+https://en.wikipedia.org/wiki/Adaptive_learning

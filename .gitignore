@@ -1,0 +1,12 @@
+data/
+output/
+__pycache__/
+*.pyc
+.env
+.kbskills.json
+*.egg-info/
+dist/
+build/
+.venv/
+.DS_Store
+.claude/
