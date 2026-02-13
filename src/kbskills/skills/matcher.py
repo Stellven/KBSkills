@@ -8,6 +8,7 @@ from rich.console import Console
 
 from kbskills.config import Config
 from kbskills.skills.loader import Skill
+from kbskills.utils.retry import retry_embedding_call, EmbeddingError
 
 console = Console()
 
@@ -35,13 +36,20 @@ class SkillMatcher:
             self._client = genai.Client(api_key=self.config.gemini_api_key)
         return self._client
 
+    @retry_embedding_call(max_retries=3, min_wait=2, max_wait=15)
     def _embed(self, texts: list[str]) -> list[list[float]]:
-        """Get embeddings for a list of texts."""
-        result = self.client.models.embed_content(
-            model=f"models/{self.config.embedding_model}",
-            contents=texts,
-        )
-        return [e.values for e in result.embeddings]
+        """Get embeddings for a list of texts.
+
+        Retries up to 3 times with exponential backoff on API errors.
+        """
+        try:
+            result = self.client.models.embed_content(
+                model=f"models/{self.config.embedding_model}",
+                contents=texts,
+            )
+            return [e.values for e in result.embeddings]
+        except Exception as e:
+            raise EmbeddingError(f"Embedding API call failed: {e}") from e
 
     def _cosine_similarity(self, a: list[float], b: list[float]) -> float:
         """Compute cosine similarity between two vectors."""

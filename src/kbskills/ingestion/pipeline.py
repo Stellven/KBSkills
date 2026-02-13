@@ -12,6 +12,7 @@ from kbskills.ingestion.url_parser import parse_url_file, URLType
 from kbskills.ingestion.web_scraper import scrape_url
 from kbskills.ingestion.youtube import transcribe_youtube
 from kbskills.ingestion.audio import transcribe_audio_url
+from kbskills.utils.retry import retry_api_call, IngestionError
 
 console = Console()
 
@@ -85,8 +86,12 @@ def run_ingestion(config: Config, source_dir: str | None = None, urls_file: str 
     _insert_into_graph(config, documents)
 
 
+@retry_api_call(operation_name="VisionAPI", max_retries=3, min_wait=2, max_wait=20)
 def _process_image(file_path: str, api_key: str) -> str | None:
-    """Extract text description from an image using Gemini Vision."""
+    """Extract text description from an image using Gemini Vision.
+
+    Retries up to 3 times with exponential backoff on API errors.
+    """
     if not api_key:
         return None
     try:
@@ -104,17 +109,26 @@ def _process_image(file_path: str, api_key: str) -> str | None:
         )
         return response.text
     except Exception as e:
-        console.print(f"[yellow]Image processing failed for {file_path}: {e}[/yellow]")
-        return None
+        raise IngestionError(f"Image processing failed for {file_path}: {e}") from e
 
 
 def _insert_into_graph(config: Config, documents: list[Document]):
     """Insert documents into the LightRAG knowledge graph."""
     from kbskills.knowledge.graph_builder import get_rag_instance
+    from kbskills.utils.retry import retry_api_call
 
     console.print("\n[bold]Building knowledge graph...[/bold]")
     rag = get_rag_instance(config)
 
+    @retry_api_call(operation_name="GraphInsert", max_retries=3, min_wait=2, max_wait=20)
+    def _insert_single(text: str):
+        """Insert a single document with retry."""
+        try:
+            rag.insert(text)
+        except Exception as e:
+            raise IngestionError(f"Graph insertion failed: {e}") from e
+
+    failed_count = 0
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"),
                   console=console) as progress:
         task = progress.add_task("Inserting documents...", total=len(documents))
@@ -124,9 +138,13 @@ def _insert_into_graph(config: Config, documents: list[Document]):
             try:
                 # Prepend source metadata for context
                 text_with_source = f"[Source: {doc.source}]\n\n{doc.content}"
-                rag.insert(text_with_source)
-            except Exception as e:
-                console.print(f"[yellow]Failed to index {doc.source}: {e}[/yellow]")
+                _insert_single(text_with_source)
+            except (IngestionError, Exception) as e:
+                failed_count += 1
+                console.print(f"[yellow]Failed to index {doc.source} after retries: {e}[/yellow]")
             progress.advance(task)
 
-    console.print("[green]Knowledge graph updated successfully![/green]")
+    if failed_count:
+        console.print(f"[yellow]Knowledge graph updated with {failed_count} failed document(s).[/yellow]")
+    else:
+        console.print("[green]Knowledge graph updated successfully![/green]")

@@ -20,6 +20,7 @@ from kbskills.skills.executor import (
     build_tools_format,
     format_activated_skills_header,
 )
+from kbskills.utils.retry import retry_llm_call, LLMError
 
 console = Console()
 
@@ -38,13 +39,25 @@ class TopicAgent:
             self._client = genai.Client(api_key=self.config.gemini_api_key)
         return self._client
 
+    @retry_llm_call(max_retries=3, min_wait=2, max_wait=30)
     def _llm_call(self, prompt: str) -> str:
-        """Make a call to the Gemini LLM."""
-        response = self.client.models.generate_content(
-            model=self.config.llm_model,
-            contents=prompt,
-        )
-        return response.text
+        """Make a call to the Gemini LLM.
+
+        Retries up to 3 times with exponential backoff on API errors.
+        Raises LLMError if all retries are exhausted.
+        """
+        try:
+            response = self.client.models.generate_content(
+                model=self.config.llm_model,
+                contents=prompt,
+            )
+            if response.text is None:
+                raise LLMError("LLM returned empty response")
+            return response.text
+        except LLMError:
+            raise
+        except Exception as e:
+            raise LLMError(f"Gemini API call failed: {e}") from e
 
     def run(self, topic: str, search_mode: str = "hybrid", output_path: str | None = None) -> str:
         """Run the full topic agent pipeline.
