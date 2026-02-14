@@ -27,8 +27,18 @@ dependencies = [
     "tenacity>=8.2",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "pytest-asyncio>=0.23",
+]
+
 [project.scripts]
 kbskills = "kbskills.cli:cli"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kbskills"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
